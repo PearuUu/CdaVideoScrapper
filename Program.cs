@@ -2,19 +2,22 @@
 using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System.Collections;
 
 
-List<string> cdaLinks = new List<string>();
-List<string> videoLinks = new List<string>();
-List<string> videoTitles = new List<string>();
+var cdaLinks = new List<string>();
+var videoLinks = new List<string>();
+var videoTitles = new List<string>();
 
 
-SortedDictionary<string, string> videos = new SortedDictionary<string, string>();
 
-
-string path = @"E:\Boruto\bruh.json";
+var videos = new SortedDictionary<string, string>();
+var cdaLinksD = new SortedDictionary<string, string>();
 
 bool isFileExist = false;
+
+string pathVideos = @"E:\Boruto\boruto.json";
+string pathCda = @"E:\Boruto\borutoCda.json";
 
 void GetVideoSource(List<string> urls)
 {
@@ -32,9 +35,7 @@ void GetVideoSource(List<string> urls)
             IWebElement video = driver.FindElement(By.XPath(@"//video[@class='pb-video-player']"));
             string videoUrl = video.GetAttribute("src");
             Console.WriteLine("Video: " + videoUrl);
-            //videoLinks.Add(videoUrl);
-            videoLinks[i] = videoUrl;
-            i++;
+            videoLinks.Add(videoUrl);
             Thread.Sleep(10000);
         }
 
@@ -59,8 +60,10 @@ void GetCdaLinks()
     const string Xpath = @"//body/div[@id=""szkielet""]/div[@id=""tresc_lewa""]/table/tbody//a[@href]";
     const string Xpath2 = @"//span[@rel]";
     const string Xpath3 = @"//body/div[@id=""szkielet""]/div[@id=""tresc_lewa""]/center/iframe";
+    const string Xpath4 = @"//div[@class='wrapqualitybtn']";
 
     int i = 0;
+
 
     foreach (HtmlNode link in doc.DocumentNode.SelectNodes(Xpath))
     {
@@ -83,123 +86,130 @@ void GetCdaLinks()
 
                     foreach (HtmlNode link3 in doc.DocumentNode.SelectNodes(Xpath3))
                     {
-                        if (isFileExist == false)
+                        HtmlAttribute src = link3.Attributes["src"];
+                        html = src.Value;
+                        doc = web.Load(html);
+
+
+                        foreach (HtmlNode link4 in doc.DocumentNode.SelectNodes(Xpath4))
                         {
-                            Console.WriteLine("bruh1");
-                            videoTitles.Add(link.InnerText);
-                            videoLinks.Add("");
+                            //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
+                            //Console.WriteLine(href);
 
-                            Console.WriteLine("TytułList1: " + videoTitles[i]);
-                            Console.WriteLine("TytułHtml1: " + link.InnerText);
-                            if (videoTitles[i] == link.InnerText && videoLinks[i].Length == 0)
+                            if (isFileExist == false)
                             {
-                                HtmlAttribute src = link3.Attributes["src"];
-                                html = src.Value;
-                                //return;
-                                cdaLinks.Add(html);
-                                Console.WriteLine("Zaktualizowano");
-                                i++;
-                            }
-                            else if (videoTitles[i] == link.InnerText && videoLinks[i].Length != 0)
-                            {
-                                i++;
-                                Console.WriteLine("Zostawiono");
-                            }
-                            else if (videoTitles[i] != link.InnerText)
-                            {
-                                HtmlAttribute src = link3.Attributes["src"];
-                                html = src.Value;
 
-                                cdaLinks.Add(html);
+                                Console.WriteLine("FIleNotExist");
+                                videoTitles.Add(link.InnerText);
+                                videoLinks.Add("");
+
+                                Console.WriteLine("TytułList1: " + videoTitles[i]);
+                                Console.WriteLine("TytułHtml1: " + link.InnerText);
+
+                                var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
+
+                                cdaLinks.Add(href);
+                                cdaLinksD.Add(link.InnerText, href);
+                                videoTitles.Add(link.InnerText);
                                 videos.Add(link.InnerText, "");
                                 Console.WriteLine("Dodano");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("bruh2");
-                            Console.WriteLine("TytułList2: " + videoTitles[i]);
-                            Console.WriteLine("TytułHtml2: " + link.InnerText);
-                            if (videoTitles[i] == link.InnerText && videoLinks[i].Length == 0)
-                            {
-                                HtmlAttribute src = link3.Attributes["src"];
-                                html = src.Value;
-                                //return;
-                                cdaLinks.Add(html);
-                                Console.WriteLine("Zaktualizowano");
                                 i++;
-                            }
-                            else if (videoTitles[i] == link.InnerText && videoLinks[i].Length != 0)
-                            {
-                                i++;
-                                Console.WriteLine("Zostawiono");
-                            }
-                            else if (videoTitles[i] != link.InnerText)
-                            {
-                                HtmlAttribute src = link3.Attributes["src"];
-                                html = src.Value;
 
-                                cdaLinks.Add(html);
-                                videos.Add(link.InnerText, "");
-                                Console.WriteLine("Dodano");
+                                Thread.Sleep(10000);
                             }
+                            else
+                            {
+                                Console.WriteLine("FileExist");
+                                Console.WriteLine("TytułList2: " + videoTitles[i]);
+                                Console.WriteLine("TytułHtml2: " + link.InnerText);
+                                /*if (videoTitles[i] == link.InnerText && videoLinks[i].Length == 0)
+                                {
+                                    //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
+
+                                    //cdaLinks.Add(href);
+                                    Console.WriteLine("Zaktualizowano");
+                                    i++;
+                                }*/
+                                if (videoTitles[i] != link.InnerText)
+                                {
+                                    var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
+
+                                    cdaLinks.Add(href);
+                                    cdaLinksD.Add(link.InnerText, href);
+                                    videoTitles.Add(link.InnerText);
+                                    videos.Add(link.InnerText, "");
+                                    Console.WriteLine("Dodano");
+
+                                }
+                                else if (videoTitles[i] == link.InnerText)
+                                {
+                                    videoTitles.Sort();
+                                    videoTitles.Reverse();
+                                    return;
+                                }
+
+
+
+                            }
+
                         }
-                         
 
-                        
+
                     }
+
                 }
             }
         }
-
-
     }
+
+    
 }
+
 void SaveToJson()
 {
-    /*for (int i = 0; i < videoLinks.Count; i++)
+    for (int i = 0; i < videoLinks.Count; i++)
     {
         videos[videoTitles[i]] = videoLinks[i];
-        videos.ToList().ForEach(x => Console.WriteLine(x));
-        Console.WriteLine("bruhasjikfghdkujiasfghkjasdf");
-    }*/
 
-    videos.ToList().ForEach(x => Console.WriteLine("Klucz: " + x.Key + " Wartość: " + x.Value));
-    Console.WriteLine("bruh");
-    Console.WriteLine(videos.Count());
-    //videos.ToList().ForEach(x => Console.WriteLine(x));
-    //string json = JsonConvert.SerializeObject(videos.Reverse());
+    }
+    string videoJson = JsonConvert.SerializeObject(videos);
+    string cdaJson = JsonConvert.SerializeObject(cdaLinksD);
 
-    //File.WriteAllText(path, json);
+    File.WriteAllText(pathVideos, videoJson);
+    File.WriteAllText(pathCda, cdaJson);
 
 }
 void ReadJson()
 {
-    if (File.Exists(path))
+    if (File.Exists(pathCda))
     {
-        videos = JsonConvert.DeserializeObject<SortedDictionary<string, string>>(File.ReadAllText(path));
-        
+        cdaLinksD = JsonConvert.DeserializeObject<SortedDictionary<string, string>>(File.ReadAllText(pathCda));
+        videos = JsonConvert.DeserializeObject<SortedDictionary<string, string>>(File.ReadAllText(pathCda));
         isFileExist = true;
+        
+
+        if (cdaLinksD.Count() > 0)
+        {
+            Console.WriteLine(isFileExist);
+            videoTitles = cdaLinksD.Keys.Reverse().ToList();
+            cdaLinks = cdaLinksD.Values.Reverse().ToList();
+
+        }
+
+        //Console.WriteLine(videoLinks[50].Length);
+
+        videoTitles.ForEach(x => Console.WriteLine("Klucz: " + x));
+        //videoLinks.ForEach(x => Console.WriteLine("Wartość: " + x));
+        //videos.Reverse().ToList().ForEach(x => Console.WriteLine("Klucz: " + x.Key + " Wartość: " + x.Value));
+        //cdaLinks.ForEach(x => Console.WriteLine("Wartość: " + x));
+        //Console.WriteLine("-----------------------------------------------------------------------------------------------------------");
     }
-    
-    if (videos.Count() > 0)
-    {
-        videoTitles = videos.Keys.Reverse().ToList();
-        videoLinks = videos.Values.Reverse().ToList();
-    }
-
-    //Console.WriteLine(videoLinks[50].Length);
-
-    //videoTitles.ForEach(x => Console.WriteLine("Klucz: " + x));
-    //videoLinks.ForEach(x => Console.WriteLine("Wartość: " + x));
-    //videos.Reverse().ToList().ForEach(x => Console.WriteLine("Klucz: " + x.Key + " Wartość: " + x.Value));
-
 }
 
 
 ReadJson();
 GetCdaLinks();
-//GetVideoSource(cdaLinks);
+GetVideoSource(cdaLinksD.Values.Reverse().ToList());
 SaveToJson();
 
 
