@@ -1,15 +1,13 @@
 ﻿using HtmlAgilityPack;
+using MySql.Data.MySqlClient;
 using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using System.Collections;
 
 
 var cdaLinks = new List<string>();
 var videoLinks = new List<string>();
 var videoTitles = new List<string>();
-
-
 
 var videos = new SortedDictionary<string, string>();
 var cdaLinksD = new SortedDictionary<string, string>();
@@ -19,11 +17,19 @@ bool isFileExist = false;
 string pathVideos = @"E:\Boruto\boruto.json";
 string pathCda = @"E:\Boruto\borutoCda.json";
 
+MySqlConnection connection;
+string server;
+string database;
+string uid;
+string password;
+bool isConnected;
+
 void GetVideoSource(List<string> urls)
 {
+    Delete();
     IWebDriver driver;
     driver = new ChromeDriver();
-
+    
     try
     {
         driver.Manage().Timeouts().ImplicitWait = System.TimeSpan.FromSeconds(10);
@@ -35,7 +41,9 @@ void GetVideoSource(List<string> urls)
             IWebElement video = driver.FindElement(By.XPath(@"//video[@class='pb-video-player']"));
             string videoUrl = video.GetAttribute("src");
             Console.WriteLine("Video: " + videoUrl);
+            InsertBoruto(videoTitles[i], videoUrl);
             videoLinks.Add(videoUrl);
+            i++;
             Thread.Sleep(10000);
         }
 
@@ -60,7 +68,7 @@ void GetCdaLinks()
     const string Xpath = @"//body/div[@id=""szkielet""]/div[@id=""tresc_lewa""]/table/tbody//a[@href]";
     const string Xpath2 = @"//span[@rel]";
     const string Xpath3 = @"//body/div[@id=""szkielet""]/div[@id=""tresc_lewa""]/center/iframe";
-    const string Xpath4 = @"//div[@class='wrapqualitybtn']";
+    const string Xpath4 = @"//ul[@class='pb-menu-slave pb-menu-slave-indent']";
 
     int i = 0;
 
@@ -90,69 +98,70 @@ void GetCdaLinks()
                         html = src.Value;
                         doc = web.Load(html);
 
+                        //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
+                        //Console.WriteLine(href);
 
-                        foreach (HtmlNode link4 in doc.DocumentNode.SelectNodes(Xpath4))
+                        if (isFileExist == false)
                         {
+
+                            Console.WriteLine("FIleNotExist");
+                            videoTitles.Add(link.InnerText);
+                            //videoLinks.Add("");
+
+                            Console.WriteLine("TytułList1: " + videoTitles[i]);
+                            Console.WriteLine("TytułHtml1: " + link.InnerText);
+
                             //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
-                            //Console.WriteLine(href);
 
-                            if (isFileExist == false)
+                            //cdaLinks.Add(html);
+                            cdaLinksD.Add(link.InnerText, html);
+                            InsertBorutoCda(link.InnerText, html);
+                            //videos.Add(link.InnerText, "");
+                            Console.WriteLine("Dodano");
+                            i++;
+
+
+                            Thread.Sleep(10000);
+                        }
+                        else
+                        {
+                            Console.WriteLine("FileExist");
+                            Console.WriteLine("TytułList2: " + videoTitles[i]);
+                            Console.WriteLine("TytułHtml2: " + link.InnerText);
+                            /*if (videoTitles[i] == link.InnerText && videoLinks[i].Length == 0)
                             {
+                                //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
 
-                                Console.WriteLine("FIleNotExist");
-                                videoTitles.Add(link.InnerText);
-                                videoLinks.Add("");
-
-                                Console.WriteLine("TytułList1: " + videoTitles[i]);
-                                Console.WriteLine("TytułHtml1: " + link.InnerText);
-
-                                var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
-
-                                cdaLinks.Add(href);
-                                cdaLinksD.Add(link.InnerText, href);
-                                videoTitles.Add(link.InnerText);
-                                videos.Add(link.InnerText, "");
-                                Console.WriteLine("Dodano");
+                                //cdaLinks.Add(href);
+                                Console.WriteLine("Zaktualizowano");
                                 i++;
-
-                                Thread.Sleep(10000);
-                            }
-                            else
+                            }*/
+                            if (videoTitles[i] != link.InnerText)
                             {
-                                Console.WriteLine("FileExist");
-                                Console.WriteLine("TytułList2: " + videoTitles[i]);
-                                Console.WriteLine("TytułHtml2: " + link.InnerText);
-                                /*if (videoTitles[i] == link.InnerText && videoLinks[i].Length == 0)
-                                {
-                                    //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
+                                //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
 
-                                    //cdaLinks.Add(href);
-                                    Console.WriteLine("Zaktualizowano");
-                                    i++;
-                                }*/
-                                if (videoTitles[i] != link.InnerText)
-                                {
-                                    var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
-
-                                    cdaLinks.Add(href);
-                                    cdaLinksD.Add(link.InnerText, href);
-                                    videoTitles.Add(link.InnerText);
-                                    videos.Add(link.InnerText, "");
-                                    Console.WriteLine("Dodano");
-
-                                }
-                                else if (videoTitles[i] == link.InnerText)
-                                {
-                                    videoTitles.Sort();
-                                    videoTitles.Reverse();
-                                    return;
-                                }
-
-
+                                //cdaLinks.Add(html);
+                                cdaLinksD.Add(link.InnerText, html);
+                                videoTitles.Add(link.InnerText);
+                                //videos.Add(link.InnerText, "");
+                                InsertBorutoCda(link.InnerText, html);
+                                
+                                Console.WriteLine("Dodano");
 
                             }
+                            else if (videoTitles[i] == link.InnerText)
+                            {
+                                videoTitles.Sort();
+                                videoTitles.Reverse();
+                                SortTable("BorutoCdaLinks");
+                                return;
+                            }
+
+
 
                         }
+
+
 
 
                     }
@@ -162,7 +171,7 @@ void GetCdaLinks()
         }
     }
 
-    
+
 }
 
 void SaveToJson()
@@ -178,6 +187,8 @@ void SaveToJson()
     File.WriteAllText(pathVideos, videoJson);
     File.WriteAllText(pathCda, cdaJson);
 
+
+
 }
 void ReadJson()
 {
@@ -186,7 +197,7 @@ void ReadJson()
         cdaLinksD = JsonConvert.DeserializeObject<SortedDictionary<string, string>>(File.ReadAllText(pathCda));
         videos = JsonConvert.DeserializeObject<SortedDictionary<string, string>>(File.ReadAllText(pathCda));
         isFileExist = true;
-        
+
 
         if (cdaLinksD.Count() > 0)
         {
@@ -206,11 +217,142 @@ void ReadJson()
     }
 }
 
+void Initialize()
+{
+    server = "bvoadt6syedirie96kzk-mysql.services.clever-cloud.com";
+    database = "bvoadt6syedirie96kzk";
+    uid = "uassz4f3hcs0xafp";
+    password = "f3mxd7kQVaKhvrYTYbtt";
+    string connectionString;
+    connectionString = "SERVER=" + server + ";" + "DATABASE=" +
+    database + ";" + "UID=" + uid + ";" + "PASSWORD=" + password + ";";
 
-ReadJson();
+    connection = new MySqlConnection(connectionString);
+}
+void OpenConnection()
+{
+    try
+    {
+        connection.Open();
+        Console.WriteLine("Connection Open");
+        isConnected = true;
+    }
+    catch (MySqlException ex)
+    {
+        switch (ex.Number)
+        {
+            case 0:
+                Console.WriteLine("Cannot connect to server.  Contact administrator");
+                break;
+
+            case 1045:
+                Console.WriteLine("Invalid username/password, please try again");
+                break;
+        }
+        isConnected = false;
+    }
+}
+bool CloseConnection()
+{
+    try
+    {
+        connection.Close();
+        return true;
+    }
+    catch (MySqlException ex)
+    {
+        Console.WriteLine(ex.Message);
+        return false;
+    }
+}
+void InsertBoruto(string title, String videoSource)
+{
+    string query = $"INSERT INTO Boruto (Title, VideoSource) VALUES('{title}', '{videoSource}')";
+
+    //open connection
+    if (isConnected == true)
+    {
+        //create command and assign the query and connection from the constructor
+        MySqlCommand cmd = new MySqlCommand(query, connection);
+
+        //Execute command
+        cmd.ExecuteNonQuery();
+
+
+    }
+}
+void InsertBorutoCda(string title, string link)
+{
+    string query = $"INSERT INTO BorutoCdaLinks (Title,Link) VALUES('{title}','{link}')";
+
+    //open connection
+    if (isConnected == true)
+    {
+        //create command and assign the query and connection from the constructor
+        MySqlCommand cmd = new MySqlCommand(query, connection);
+
+        //Execute command
+        cmd.ExecuteNonQuery();
+    }
+}
+void Delete()
+{
+    string query = $"DELETE FROM Boruto";
+
+    if (isConnected == true)
+    {
+        MySqlCommand cmd = new MySqlCommand(query, connection);
+        cmd.ExecuteNonQuery();
+
+    }
+}
+void Select()
+{
+    string query = "SELECT * FROM BorutoCdaLinks";
+
+    if (isConnected == true)
+    {
+        MySqlCommand cmd = new MySqlCommand(query, connection);
+        MySqlDataReader dataReader = cmd.ExecuteReader();
+
+
+        while (dataReader.Read())
+        {
+            cdaLinksD.Add((string)dataReader["Title"], (string)dataReader["Link"]);
+        }
+
+        if (cdaLinksD.Count > 0)
+        {
+            isFileExist = true;
+            videoTitles = cdaLinksD.Keys.Reverse().ToList();
+        }
+        dataReader.Close();
+    }
+
+}
+void SortTable(string tableName)
+{
+    string query = $"ALTER TABLE {tableName} ORDER BY Title DESC";
+
+    if (isConnected == true)
+    {
+        MySqlCommand cmd = new MySqlCommand(query, connection);
+        cmd.ExecuteNonQuery();
+
+    }
+}
+
+Initialize();
+OpenConnection();
+Select();
+Console.WriteLine(isFileExist);
+
 GetCdaLinks();
 GetVideoSource(cdaLinksD.Values.Reverse().ToList());
-SaveToJson();
+
+CloseConnection();
+
+
 
 
 
