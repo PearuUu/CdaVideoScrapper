@@ -1,6 +1,5 @@
 ﻿using HtmlAgilityPack;
 using MySql.Data.MySqlClient;
-using Newtonsoft.Json;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 
@@ -14,9 +13,6 @@ var cdaLinksD = new SortedDictionary<string, string>();
 
 bool isFileExist = false;
 
-string pathVideos = @"E:\Boruto\boruto.json";
-string pathCda = @"E:\Boruto\borutoCda.json";
-
 MySqlConnection connection;
 string server;
 string database;
@@ -29,7 +25,7 @@ void GetVideoSource(List<string> urls)
     Delete();
     IWebDriver driver;
     driver = new ChromeDriver();
-    
+
     try
     {
         driver.Manage().Timeouts().ImplicitWait = System.TimeSpan.FromSeconds(10);
@@ -42,7 +38,6 @@ void GetVideoSource(List<string> urls)
             string videoUrl = video.GetAttribute("src");
             Console.WriteLine("Video: " + videoUrl);
             InsertBoruto(videoTitles[i], videoUrl);
-            videoLinks.Add(videoUrl);
             i++;
             Thread.Sleep(10000);
         }
@@ -52,7 +47,7 @@ void GetVideoSource(List<string> urls)
     }
     catch (Exception e)
     {
-        Console.WriteLine("bruh");
+        Console.WriteLine("Error");
         driver.Quit();
     }
 
@@ -106,20 +101,14 @@ void GetCdaLinks()
 
                             Console.WriteLine("FIleNotExist");
                             videoTitles.Add(link.InnerText);
-                            //videoLinks.Add("");
 
                             Console.WriteLine("TytułList1: " + videoTitles[i]);
                             Console.WriteLine("TytułHtml1: " + link.InnerText);
 
-                            //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
-
-                            //cdaLinks.Add(html);
                             cdaLinksD.Add(link.InnerText, html);
                             InsertBorutoCda(link.InnerText, html);
-                            //videos.Add(link.InnerText, "");
                             Console.WriteLine("Dodano");
                             i++;
-
 
                             Thread.Sleep(10000);
                         }
@@ -128,24 +117,14 @@ void GetCdaLinks()
                             Console.WriteLine("FileExist");
                             Console.WriteLine("TytułList2: " + videoTitles[i]);
                             Console.WriteLine("TytułHtml2: " + link.InnerText);
-                            /*if (videoTitles[i] == link.InnerText && videoLinks[i].Length == 0)
-                            {
-                                //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
 
-                                //cdaLinks.Add(href);
-                                Console.WriteLine("Zaktualizowano");
-                                i++;
-                            }*/
                             if (videoTitles[i] != link.InnerText)
                             {
-                                //var href = link4.ChildNodes[link4.ChildNodes.Count() - 2].Attributes["href"].Value;
 
-                                //cdaLinks.Add(html);
                                 cdaLinksD.Add(link.InnerText, html);
                                 videoTitles.Add(link.InnerText);
-                                //videos.Add(link.InnerText, "");
                                 InsertBorutoCda(link.InnerText, html);
-                                
+
                                 Console.WriteLine("Dodano");
 
                             }
@@ -172,49 +151,6 @@ void GetCdaLinks()
     }
 
 
-}
-
-void SaveToJson()
-{
-    for (int i = 0; i < videoLinks.Count; i++)
-    {
-        videos[videoTitles[i]] = videoLinks[i];
-
-    }
-    string videoJson = JsonConvert.SerializeObject(videos);
-    string cdaJson = JsonConvert.SerializeObject(cdaLinksD);
-
-    File.WriteAllText(pathVideos, videoJson);
-    File.WriteAllText(pathCda, cdaJson);
-
-
-
-}
-void ReadJson()
-{
-    if (File.Exists(pathCda))
-    {
-        cdaLinksD = JsonConvert.DeserializeObject<SortedDictionary<string, string>>(File.ReadAllText(pathCda));
-        videos = JsonConvert.DeserializeObject<SortedDictionary<string, string>>(File.ReadAllText(pathCda));
-        isFileExist = true;
-
-
-        if (cdaLinksD.Count() > 0)
-        {
-            Console.WriteLine(isFileExist);
-            videoTitles = cdaLinksD.Keys.Reverse().ToList();
-            cdaLinks = cdaLinksD.Values.Reverse().ToList();
-
-        }
-
-        //Console.WriteLine(videoLinks[50].Length);
-
-        videoTitles.ForEach(x => Console.WriteLine("Klucz: " + x));
-        //videoLinks.ForEach(x => Console.WriteLine("Wartość: " + x));
-        //videos.Reverse().ToList().ForEach(x => Console.WriteLine("Klucz: " + x.Key + " Wartość: " + x.Value));
-        //cdaLinks.ForEach(x => Console.WriteLine("Wartość: " + x));
-        //Console.WriteLine("-----------------------------------------------------------------------------------------------------------");
-    }
 }
 
 void Initialize()
@@ -345,7 +281,6 @@ void SortTable(string tableName)
 Initialize();
 OpenConnection();
 Select();
-Console.WriteLine(isFileExist);
 
 GetCdaLinks();
 GetVideoSource(cdaLinksD.Values.Reverse().ToList());
